@@ -23,8 +23,9 @@ model User {
   hashedRt String?
 
   full_name        String?
-  role             Role    @default(USER)
+  role             Role      @default(USER)
   shipping_address String?
+  Product          Product[]
 
   @@map("users")
 }
@@ -32,4 +33,19 @@ model User {
 enum Role {
   ADMIN
   USER
+}
+
+model Product {
+  product_id     String   @unique @default(uuid())
+  name           String
+  description    String?
+  price          Int
+  in_stock       Boolean  @default(true)
+  stock_quantity Int
+  category       String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user    User   @relation(fields: [user_id], references: [id])
+  user_id String
 }
