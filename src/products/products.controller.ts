@@ -11,7 +11,6 @@ import {
 	Response,
 	UseGuards,
 } from '@nestjs/common';
-import { Response as ExpressResponse } from 'express';
 
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto';
@@ -56,12 +55,9 @@ export class ProductsController {
 	}
 
 	@UseGuards(AtGuard)
-	@Delete(':id')
+	@Delete('delete/:id')
 	@HttpCode(HttpStatus.OK)
-	delete(
-		@Param('id') productId: string,
-		@Response() response: ExpressResponse,
-	) {
-		return this.productsService.delete(productId, response);
+	delete(@Param('id') productId: string) {
+		return this.productsService.delete(productId);
 	}
 }

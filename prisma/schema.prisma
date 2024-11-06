@@ -26,6 +26,7 @@ model User {
   role             Role      @default(USER)
   shipping_address String?
   Product          Product[]
+  Order            Order[]
 
   @@map("users")
 }
@@ -36,7 +37,7 @@ enum Role {
 }
 
 model Product {
-  product_id     String   @unique @default(uuid())
+  id             String   @unique @default(uuid())
   name           String
   description    String?
   price          Int
@@ -46,6 +47,52 @@ model Product {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
+  user          User           @relation(fields: [user_id], references: [id])
+  user_id       String
+  order_details OrderDetails[]
+
+  @@map("products")
+}
+
+model Order {
+  id              String          @unique @default(uuid())
+  total_amount    Int
+  payment_status  PaymentStatus?
+  delivery_status DeliveryStatus?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
   user    User   @relation(fields: [user_id], references: [id])
   user_id String
+
+  order_details OrderDetails[]
+
+  @@map("orders")
+}
+
+enum PaymentStatus {
+  COMPLETE
+  FAILED
+  PENDING
+}
+
+enum DeliveryStatus {
+  ORDER_PLACED
+  IN_TRANSIT
+  DELIVERED
+}
+
+model OrderDetails {
+  id                String @unique @default(uuid())
+  quantity          Int
+  price_at_purchase Int
+
+  order    Order  @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  // order    Order  @relation(fields: [order_id], references: [id])
+  order_id String
+
+  product    Product @relation(fields: [product_id], references: [id])
+  product_id String
+
+  @@map("order_details")
 }
