@@ -36,13 +36,13 @@ export class AuthService {
 		});
 
 		if (!user) {
-			throw new ForbiddenException('Access denied!');
+			throw new ForbiddenException('Incorrect email or password');
 		}
 
 		const isPasswordMatch = await bcrypt.compare(dto.password, user.hash);
 
 		if (!isPasswordMatch) {
-			throw new ForbiddenException('Access denied!');
+			throw new ForbiddenException('Incorrect email or password');
 		}
 
 		const tokens = await this.getTokens(user.id, user.email);
