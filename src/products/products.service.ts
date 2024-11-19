@@ -28,6 +28,7 @@ export class ProductsService {
 					},
 				},
 			});
+			delete product.user_id;
 			return product;
 		} catch (error) {
 			throw new BadRequestException('Create product error');
@@ -47,6 +48,7 @@ export class ProductsService {
 				...body,
 			},
 		});
+		delete updatedProduct.user_id;
 		return updatedProduct;
 	}
 
@@ -86,6 +88,7 @@ export class ProductsService {
 		if (!product) {
 			throw new NotFoundException('Product does not exist');
 		}
+		delete product.user_id;
 		return product;
 	}
 

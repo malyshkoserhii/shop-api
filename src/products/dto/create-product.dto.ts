@@ -8,6 +8,7 @@ export class CreateProductDto {
 	@IsOptional()
 	description: string;
 
+	@IsOptional()
 	@IsBoolean()
 	in_stock: boolean;
 
