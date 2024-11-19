@@ -4,10 +4,13 @@ import {
 	HttpCode,
 	HttpStatus,
 	Post,
+	Res,
 	UseGuards,
 } from '@nestjs/common';
+import { Response as ExpressResponse } from 'express';
+
 import { AuthService } from './auth.service';
-import { AuthDto } from './dto';
+import { AuthDto, VerifyEmailDto } from './dto';
 import { Tokens } from './types';
 import { AtGuard, RtGuard } from '../common/guards';
 import { GetCurrentUserId } from '../common/decorators/get-current-user-id.decorator';
@@ -21,15 +24,25 @@ export class AuthController {
 	@Public()
 	@Post('signup')
 	@HttpCode(HttpStatus.CREATED)
-	signup(@Body() dto: AuthDto): Promise<Tokens> {
-		return this.authService.signup(dto);
+	signup(@Body() body: AuthDto, @Res() response: ExpressResponse) {
+		return this.authService.signup(body, response);
 	}
 
 	@Public()
 	@Post('signin')
 	@HttpCode(HttpStatus.OK)
-	signin(@Body() dto: AuthDto): Promise<Tokens> {
-		return this.authService.signin(dto);
+	signin(@Body() body: AuthDto): Promise<Tokens> {
+		return this.authService.signin(body);
+	}
+
+	@Public()
+	@Post('verify-email')
+	@HttpCode(HttpStatus.OK)
+	verifyEmail(
+		@Body() body: VerifyEmailDto,
+		@Res() response: ExpressResponse,
+	) {
+		return this.authService.verifyEmail(body, response);
 	}
 
 	@UseGuards(AtGuard)
