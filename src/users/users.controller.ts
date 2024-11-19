@@ -4,8 +4,10 @@ import {
 	HttpCode,
 	HttpStatus,
 	Param,
+	Res,
 	UseGuards,
 } from '@nestjs/common';
+
 import { UsersService } from './users.service';
 import { AtGuard } from 'src/common/guards';
 

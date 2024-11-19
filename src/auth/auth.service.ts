@@ -1,42 +1,50 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
+import { Response as ExpressResponse } from 'express';
+
 import { PrismaService } from '../prisma/prisma.service';
-import { AuthDto } from './dto';
+import { AuthDto, VerifyEmailDto } from './dto';
 import { Tokens } from './types';
+import { UsersService } from 'src/users/users.service';
+import { EmailService } from 'src/email/email.service';
+import { generateCode } from 'src/common/utils';
 
 @Injectable()
 export class AuthService {
 	constructor(
-		private prisma: PrismaService,
+		private prismaService: PrismaService,
 		private jwtService: JwtService,
+		private userService: UsersService,
+		private emailService: EmailService,
 	) {}
 
-	async signup(dto: AuthDto): Promise<Tokens> {
+	async signup(dto: AuthDto, response: ExpressResponse) {
 		const hash = await this.hashData(dto.password);
-		const newUser = await this.prisma.user.create({
-			data: {
-				email: dto.email,
-				hash,
-			},
+
+		// create new user db record
+		await this.userService.create(dto, hash);
+
+		const code = generateCode();
+
+		await this.userService.updateVerificationCode(dto.email, code);
+
+		await this.emailService.sendEmail(dto.email, code);
+
+		return response.json({
+			message: 'User successfully registered. Please check your email',
 		});
-
-		const tokens = await this.getTokens(newUser.id, newUser.email);
-
-		await this.updateRtHash(newUser.id, tokens.refresh_token);
-
-		return tokens;
 	}
 
 	async signin(dto: AuthDto): Promise<Tokens> {
-		const user = await this.prisma.user.findUnique({
-			where: {
-				email: dto.email,
-			},
-		});
+		const user = await this.userService.findUserByEmail(dto.email);
 
 		if (!user) {
 			throw new ForbiddenException('Incorrect email or password');
+		}
+
+		if (!user.is_verified) {
+			throw new ForbiddenException('Email is not veridied');
 		}
 
 		const isPasswordMatch = await bcrypt.compare(dto.password, user.hash);
@@ -52,8 +60,25 @@ export class AuthService {
 		return tokens;
 	}
 
+	async verifyEmail(body: VerifyEmailDto, response: ExpressResponse) {
+		const user = await this.userService.findUserByEmail(body.email);
+
+		if (!user) {
+			throw new ForbiddenException('Incorrect email or password');
+		}
+
+		if (user.code === body.code) {
+			await this.userService.updateVerificationStatus(body.email, true);
+
+			return response.json({
+				message: 'Your email is verified successfully',
+			});
+		}
+		throw new ForbiddenException('Verification code is incorrect');
+	}
+
 	async logout(userId: string) {
-		await this.prisma.user.updateMany({
+		await this.prismaService.user.updateMany({
 			where: {
 				id: userId,
 				hashedRt: {
@@ -67,11 +92,7 @@ export class AuthService {
 	}
 
 	async refresh(userId: string, refreshToken: string) {
-		const user = await this.prisma.user.findUnique({
-			where: {
-				id: userId,
-			},
-		});
+		const user = await this.userService.findUnique(userId);
 
 		if (!user || !user.hashedRt) {
 			throw new ForbiddenException('Access denied!');
@@ -92,7 +113,7 @@ export class AuthService {
 
 	async updateRtHash(userId: string, rt: string) {
 		const hash = await this.hashData(rt);
-		await this.prisma.user.update({
+		await this.prismaService.user.update({
 			where: {
 				id: userId,
 			},

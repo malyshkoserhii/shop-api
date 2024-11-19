@@ -8,15 +8,19 @@ import { ProductsModule } from './products/products.module';
 import { UsersModule } from './users/users.module';
 import { OrdersModule } from './orders/orders.module';
 import { OrderDetailsModule } from './order-details/order-details.module';
+import { EmailModule } from './email/email.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
 	imports: [
 		AuthModule,
+		ConfigModule.forRoot(),
 		PrismaModule,
 		ProductsModule,
 		UsersModule,
 		OrdersModule,
 		OrderDetailsModule,
+		EmailModule,
 	],
 	providers: [
 		{
