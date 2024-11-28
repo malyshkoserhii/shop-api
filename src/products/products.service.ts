@@ -52,20 +52,12 @@ export class ProductsService {
 		return updatedProduct;
 	}
 
-	async findAll(userId: string, skip: string, take: string) {
+	async findAll(skip: string, take: string) {
 		try {
-			const whereOptions = {
-				where: {
-					user_id: userId,
-				},
-			};
 			const paginationOptions = this.defaultPaginationOptions(skip, take);
-			const totalResults = await this.prismaService.product.count({
-				...whereOptions,
-			});
+			const totalResults = await this.prismaService.product.count();
 			const products = await this.prismaService.product.findMany({
 				...paginationOptions,
-				...whereOptions,
 			});
 			const totalPages = Math.ceil(totalResults / Number(take));
 			const response = {
@@ -85,9 +77,7 @@ export class ProductsService {
 				id: productId,
 			},
 		});
-		if (!product) {
-			throw new NotFoundException('Product does not exist');
-		}
+
 		delete product.user_id;
 		return product;
 	}

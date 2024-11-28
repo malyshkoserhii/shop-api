@@ -8,7 +8,6 @@ import {
 	Param,
 	Post,
 	Query,
-	Response,
 	UseGuards,
 } from '@nestjs/common';
 
@@ -39,12 +38,8 @@ export class ProductsController {
 	@UseGuards(AtGuard)
 	@Get('all')
 	@HttpCode(HttpStatus.OK)
-	findAll(
-		@GetCurrentUserId() userId: string,
-		@Query('skip') skip: string,
-		@Query('take') take: string,
-	) {
-		return this.productsService.findAll(userId, skip, take);
+	findAll(@Query('skip') skip: string, @Query('take') take: string) {
+		return this.productsService.findAll(skip, take);
 	}
 
 	@UseGuards(AtGuard)
