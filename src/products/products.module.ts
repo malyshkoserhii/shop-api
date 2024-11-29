@@ -1,4 +1,9 @@
-import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import {
+	MiddlewareConsumer,
+	Module,
+	NestModule,
+	RequestMethod,
+} from '@nestjs/common';
 import { ProductsController } from './products.controller';
 
 import { UsersModule } from 'src/users/users.module';
@@ -18,6 +23,8 @@ export class ProductsModule implements NestModule {
 
 		consumer
 			.apply(isExistMiddleware.use('product', 'id'))
-			.forRoutes(ProductsController);
+			// .forRoutes(ProductsController);
+			.exclude({ path: 'products/all', method: RequestMethod.GET })
+			.forRoutes({ path: 'products/:id', method: RequestMethod.GET });
 	}
 }

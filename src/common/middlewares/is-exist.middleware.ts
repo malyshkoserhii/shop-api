@@ -9,15 +9,15 @@ export class IsExistMiddleware implements NestMiddleware {
 
 	use(modelName: string, idField: string) {
 		return async (req: Request, _res: Response, next: NextFunction) => {
-			const idValue = req.params[idField]; // The value to check from params
+			const idValue = req.params[idField];
 
-			const whereCondition = { [idField]: String(idValue) }; // Adjust accordingly
+			const whereCondition = { [idField]: String(idValue) };
 
-			const exist = await this.prisma[modelName].findUnique({
+			const isEntityExist = await this.prisma[modelName].findUnique({
 				where: whereCondition,
 			});
 
-			if (!exist) {
+			if (!isEntityExist) {
 				throw new NotFoundException(
 					`Resource with ${idField} ${idValue} not found`,
 				);
