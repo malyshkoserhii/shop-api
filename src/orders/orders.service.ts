@@ -91,8 +91,23 @@ export class OrdersService {
 		}
 	}
 
-	async findAll(skip: string, take: string) {
+	async findAll(skip: string, take: string, email: string) {
 		const whereOptions = {
+			where: {
+				user: {
+					email: {
+						contains: email,
+						mode: 'insensitive',
+					},
+				},
+			},
+		} satisfies Prisma.OrderFindManyArgs;
+
+		const paginationOptions = this.defaultPaginationOptions(skip, take);
+
+		const orders = await this.prismaService.order.findMany({
+			...whereOptions,
+			...paginationOptions,
 			include: {
 				user: {
 					select: {
@@ -100,13 +115,6 @@ export class OrdersService {
 					},
 				},
 			},
-		};
-
-		const paginationOptions = this.defaultPaginationOptions(skip, take);
-
-		const orders = await this.prismaService.order.findMany({
-			...whereOptions,
-			...paginationOptions,
 		});
 
 		const orderData = orders.map((order) => {
@@ -116,7 +124,9 @@ export class OrdersService {
 			};
 		});
 
-		const totalResults = await this.prismaService.order.count();
+		const totalResults = await this.prismaService.order.count({
+			...whereOptions,
+		});
 
 		const totalPages = Math.ceil(totalResults / Number(take));
 

@@ -45,8 +45,12 @@ export class OrdersController {
 	@UseGuards(AtGuard)
 	@Get('all')
 	@HttpCode(HttpStatus.OK)
-	findAll(@Query('skip') skip: string, @Query('take') take: string) {
-		return this.ordersService.findAll(skip, take);
+	findAll(
+		@Query('skip') skip: string,
+		@Query('take') take: string,
+		@Query('email') email: string,
+	) {
+		return this.ordersService.findAll(skip, take, email);
 	}
 
 	@UseGuards(AtGuard)
