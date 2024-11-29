@@ -60,8 +60,8 @@ model Product {
 model Order {
   id              String          @unique @default(uuid())
   total_amount    Int
-  payment_status  PaymentStatus?
-  delivery_status DeliveryStatus?
+  payment_status  PaymentStatus?  @default(PENDING)
+  delivery_status DeliveryStatus? @default(PENDING)
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
@@ -80,7 +80,7 @@ enum PaymentStatus {
 }
 
 enum DeliveryStatus {
-  ORDER_PLACED
+  PENDING
   IN_TRANSIT
   DELIVERED
 }

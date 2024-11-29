@@ -29,19 +29,16 @@ export class OrdersController {
 	}
 
 	@UseGuards(AtGuard)
-	@Post('update/:orderId')
+	@Post('update/:id')
 	@HttpCode(HttpStatus.OK)
-	update(@Body() body: UpdateOrderDto, @Param('orderId') orderId: string) {
+	update(@Body() body: UpdateOrderDto, @Param('id') orderId: string) {
 		return this.ordersService.update(orderId, body);
 	}
 
 	@UseGuards(AtGuard)
-	@Post('add/:orderId')
+	@Post('add/:id')
 	@HttpCode(HttpStatus.OK)
-	addNewProducts(
-		@Param('orderId') orderId: string,
-		@Body() body: CreateOrderDto,
-	) {
+	addNewProducts(@Param('id') orderId: string, @Body() body: CreateOrderDto) {
 		return this.ordersService.addNewProducts(orderId, body);
 	}
 
@@ -49,11 +46,22 @@ export class OrdersController {
 	@Get('all')
 	@HttpCode(HttpStatus.OK)
 	findAll(
+		@Query('skip') skip: string,
+		@Query('take') take: string,
+		@Query('email') email: string,
+	) {
+		return this.ordersService.findAll(skip, take, email);
+	}
+
+	@UseGuards(AtGuard)
+	@Get('customer-orders')
+	@HttpCode(HttpStatus.OK)
+	findCustomerOrders(
 		@GetCurrentUserId() userId: string,
 		@Query('skip') skip: string,
 		@Query('take') take: string,
 	) {
-		return this.ordersService.findAll(userId, skip, take);
+		return this.ordersService.findCustomerOrders(userId, skip, take);
 	}
 
 	@UseGuards(AtGuard)

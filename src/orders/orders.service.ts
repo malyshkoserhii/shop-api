@@ -46,14 +46,10 @@ export class OrdersService {
 	async addNewProducts(orderId: string, body: CreateOrderDto) {
 		const order = await this.findUnique(orderId);
 
-		if (order.delivery_status || order.payment_status) {
+		if (order?.delivery_status || order?.payment_status) {
 			throw new BadRequestException(
 				'You can not add product to order with updated status',
 			);
-		}
-
-		if (!order) {
-			throw new BadRequestException('Order with such id does not exist');
 		}
 
 		await this.orderDetailsService.create(body, order);
@@ -76,12 +72,6 @@ export class OrdersService {
 		try {
 			const order = await this.findUnique(orderId);
 
-			if (!order) {
-				throw new BadRequestException(
-					'Order with such id does not exist',
-				);
-			}
-
 			await this.orderDetailsService.update(orderId, body);
 
 			// TODO: send total amount from Front End. Put it to CreateOrderDto
@@ -101,7 +91,55 @@ export class OrdersService {
 		}
 	}
 
-	async findAll(userId: string, skip: string, take: string) {
+	async findAll(skip: string, take: string, email: string) {
+		const whereOptions = {
+			where: {
+				user: {
+					email: {
+						contains: email,
+						mode: 'insensitive',
+					},
+				},
+			},
+		} satisfies Prisma.OrderFindManyArgs;
+
+		const paginationOptions = this.defaultPaginationOptions(skip, take);
+
+		const orders = await this.prismaService.order.findMany({
+			...whereOptions,
+			...paginationOptions,
+			include: {
+				user: {
+					select: {
+						email: true,
+					},
+				},
+			},
+		});
+
+		const orderData = orders.map((order) => {
+			return {
+				...order,
+				customer: order.user.email,
+			};
+		});
+
+		const totalResults = await this.prismaService.order.count({
+			...whereOptions,
+		});
+
+		const totalPages = Math.ceil(totalResults / Number(take));
+
+		const response = {
+			data: orderData,
+			total_results: totalResults,
+			total_pages: totalPages,
+		};
+
+		return response;
+	}
+
+	async findCustomerOrders(userId: string, skip: string, take: string) {
 		const whereOptions = {
 			where: {
 				user_id: userId,
@@ -115,9 +153,7 @@ export class OrdersService {
 			...paginationOptions,
 		});
 
-		const totalResults = await this.prismaService.order.count({
-			...whereOptions,
-		});
+		const totalResults = await this.prismaService.order.count();
 
 		const totalPages = Math.ceil(totalResults / Number(take));
 
@@ -152,11 +188,7 @@ export class OrdersService {
 	async delete(orderId: string) {
 		const order = await this.findUnique(orderId);
 
-		if (!order) {
-			throw new BadRequestException('Order with such id does not exist');
-		}
-
-		if (order.delivery_status || order.payment_status) {
+		if (order?.delivery_status || order?.payment_status) {
 			throw new BadRequestException(
 				'You can not remove order with updated status',
 			);
