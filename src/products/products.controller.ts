@@ -10,6 +10,7 @@ import {
 	Query,
 	UseGuards,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto';
@@ -38,8 +39,12 @@ export class ProductsController {
 	@UseGuards(AtGuard)
 	@Get('all')
 	@HttpCode(HttpStatus.OK)
-	findAll(@Query('skip') skip: string, @Query('take') take: string) {
-		return this.productsService.findAll(skip, take);
+	findAll(
+		@Query('skip') skip: string,
+		@Query('take') take: string,
+		@Query('sort') sort: Prisma.SortOrder,
+	) {
+		return this.productsService.findAll(skip, take, sort);
 	}
 
 	@UseGuards(AtGuard)
