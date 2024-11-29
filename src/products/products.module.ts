@@ -23,7 +23,6 @@ export class ProductsModule implements NestModule {
 
 		consumer
 			.apply(isExistMiddleware.use('product', 'id'))
-			// .forRoutes(ProductsController);
 			.exclude({ path: 'products/all', method: RequestMethod.GET })
 			.forRoutes({ path: 'products/:id', method: RequestMethod.GET });
 	}
