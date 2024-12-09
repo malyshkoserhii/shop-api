@@ -36,10 +36,6 @@ export class ProductsService {
 	}
 
 	async update(body: UpdateProductDto, productId: string) {
-		const product = await this.findUnique(productId);
-		if (!product) {
-			throw new NotFoundException('Product does not exist');
-		}
 		const updatedProduct = await this.prismaService.product.update({
 			where: {
 				id: productId,
@@ -52,9 +48,13 @@ export class ProductsService {
 		return updatedProduct;
 	}
 
-	async findAll(skip: string, take: string) {
+	async findAll(skip: string, take: string, sort: Prisma.SortOrder) {
 		try {
-			const paginationOptions = this.defaultPaginationOptions(skip, take);
+			const paginationOptions = this.defaultPaginationOptions(
+				skip,
+				take,
+				sort,
+			);
 			const totalResults = await this.prismaService.product.count();
 			const products = await this.prismaService.product.findMany({
 				...paginationOptions,
@@ -83,10 +83,6 @@ export class ProductsService {
 	}
 
 	async delete(productId: string) {
-		const product = await this.findUnique(productId);
-		if (!product) {
-			throw new NotFoundException('Product does not exist');
-		}
 		await this.prismaService.product.delete({
 			where: {
 				id: productId,
@@ -100,12 +96,13 @@ export class ProductsService {
 	private defaultPaginationOptions(
 		skip: string,
 		take: string,
+		sort: Prisma.SortOrder,
 	): Prisma.ProductFindManyArgs {
 		return {
 			skip: Number(skip),
 			take: Number(take),
 			orderBy: {
-				createdAt: 'desc',
+				price: sort,
 			},
 		};
 	}
