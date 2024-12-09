@@ -18,9 +18,9 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  email    String  @unique
-  hash     String
-  hashedRt String?
+  email     String  @unique
+  hash      String
+  hashed_rt String?
 
   is_verified Boolean @default(false)
   code        Int?
