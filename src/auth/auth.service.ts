@@ -9,6 +9,7 @@ import { Tokens } from './types';
 import { UsersService } from 'src/users/users.service';
 import { EmailService } from 'src/email/email.service';
 import { generateCode } from 'src/common/utils';
+import { Role } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -38,6 +39,7 @@ export class AuthService {
 
 	async signin(dto: AuthDto): Promise<Tokens> {
 		const user = await this.userService.findUserByEmail(dto.email);
+		console.log('🚀 ~ AuthService ~ signin ~ user:', user);
 
 		if (!user) {
 			throw new ForbiddenException('Incorrect email or password');
@@ -53,7 +55,7 @@ export class AuthService {
 			throw new ForbiddenException('Incorrect email or password');
 		}
 
-		const tokens = await this.getTokens(user.id, user.email);
+		const tokens = await this.getTokens(user.id, user.email, user.role);
 
 		await this.updateRtHash(user.id, tokens.refresh_token);
 
@@ -81,12 +83,12 @@ export class AuthService {
 		await this.prismaService.user.updateMany({
 			where: {
 				id: userId,
-				hashedRt: {
+				hashed_rt: {
 					not: null,
 				},
 			},
 			data: {
-				hashedRt: null,
+				hashed_rt: null,
 			},
 		});
 	}
@@ -94,17 +96,17 @@ export class AuthService {
 	async refresh(userId: string, refreshToken: string) {
 		const user = await this.userService.findUnique(userId);
 
-		if (!user || !user.hashedRt) {
+		if (!user || !user.hashed_rt) {
 			throw new ForbiddenException('Access denied!');
 		}
 
-		const isHashMatch = await bcrypt.compare(refreshToken, user.hashedRt);
+		const isHashMatch = await bcrypt.compare(refreshToken, user.hashed_rt);
 
 		if (!isHashMatch) {
 			throw new ForbiddenException('Access denied!');
 		}
 
-		const tokens = await this.getTokens(userId, user.email);
+		const tokens = await this.getTokens(userId, user.email, user.role);
 
 		await this.updateRtHash(userId, tokens.refresh_token);
 
@@ -118,17 +120,22 @@ export class AuthService {
 				id: userId,
 			},
 			data: {
-				hashedRt: hash,
+				hashed_rt: hash,
 			},
 		});
 	}
 
-	async getTokens(userId: string, email: string): Promise<Tokens> {
+	async getTokens(
+		userId: string,
+		email: string,
+		role: Role,
+	): Promise<Tokens> {
 		const [at, rt] = await Promise.all([
 			this.jwtService.signAsync(
 				{
 					sub: userId,
 					email,
+					role,
 				},
 				{
 					secret: 'at-secret',
@@ -139,6 +146,7 @@ export class AuthService {
 				{
 					sub: userId,
 					email,
+					role,
 				},
 				{ secret: 'rt-secret', expiresIn: 60 * 60 * 24 * 7 }, // 7 days
 			),

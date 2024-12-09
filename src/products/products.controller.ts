@@ -10,19 +10,21 @@ import {
 	Query,
 	UseGuards,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, Role } from '@prisma/client';
 
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto';
 import { GetCurrentUserId } from 'src/common/decorators';
-import { AtGuard } from 'src/common/guards';
+import { AtGuard, RolesGuard } from 'src/common/guards';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { Roles } from 'src/common/decorators';
 
 @Controller('products')
 export class ProductsController {
 	constructor(private productsService: ProductsService) {}
 
 	@UseGuards(AtGuard)
+	@Roles([Role.ADMIN])
 	@Post('create')
 	@HttpCode(HttpStatus.CREATED)
 	create(@Body() body: CreateProductDto, @GetCurrentUserId() userId: string) {
