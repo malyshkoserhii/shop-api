@@ -3,6 +3,7 @@ import {
 	BadRequestException,
 	ForbiddenException,
 	Injectable,
+	NotFoundException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
@@ -41,12 +42,6 @@ export class AuthService {
 
 		await this.sendCode(dto.email);
 
-		// const code = generateCode();
-
-		// await this.userService.updateVerificationCode(dto.email, code);
-
-		// await this.emailService.sendEmail(dto.email, code);
-
 		return response.json({
 			message: 'User successfully registered. Please check your email',
 		});
@@ -56,6 +51,7 @@ export class AuthService {
 		const user = await this.userService.findUserByEmail(dto.email);
 
 		if (!user) {
+			console.log('1');
 			throw new ForbiddenException('Incorrect email or password');
 		}
 
@@ -68,7 +64,7 @@ export class AuthService {
 		if (!user.is_verified) {
 			await this.sendCode(dto.email);
 
-			throw new BadRequestException(
+			throw new NotFoundException(
 				'Account is not verified. Please check your email',
 			);
 		}
