@@ -1,4 +1,9 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import {
+	BadGatewayException,
+	BadRequestException,
+	ForbiddenException,
+	Injectable,
+} from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { Response as ExpressResponse } from 'express';
@@ -23,14 +28,24 @@ export class AuthService {
 	async signup(dto: AuthDto, response: ExpressResponse) {
 		const hash = await this.hashData(dto.password);
 
+		const isExist = await this.userService.findUserByEmail(dto.email);
+
+		if (isExist) {
+			throw new BadRequestException(
+				'This email has been already registered',
+			);
+		}
+
 		// create new user db record
 		await this.userService.create(dto, hash);
 
-		const code = generateCode();
+		await this.sendCode(dto.email);
 
-		await this.userService.updateVerificationCode(dto.email, code);
+		// const code = generateCode();
 
-		await this.emailService.sendEmail(dto.email, code);
+		// await this.userService.updateVerificationCode(dto.email, code);
+
+		// await this.emailService.sendEmail(dto.email, code);
 
 		return response.json({
 			message: 'User successfully registered. Please check your email',
@@ -39,20 +54,23 @@ export class AuthService {
 
 	async signin(dto: AuthDto): Promise<Tokens> {
 		const user = await this.userService.findUserByEmail(dto.email);
-		console.log('🚀 ~ AuthService ~ signin ~ user:', user);
 
 		if (!user) {
 			throw new ForbiddenException('Incorrect email or password');
-		}
-
-		if (!user.is_verified) {
-			throw new ForbiddenException('Email is not veridied');
 		}
 
 		const isPasswordMatch = await bcrypt.compare(dto.password, user.hash);
 
 		if (!isPasswordMatch) {
 			throw new ForbiddenException('Incorrect email or password');
+		}
+
+		if (!user.is_verified) {
+			await this.sendCode(dto.email);
+
+			throw new BadRequestException(
+				'Account is not verified. Please check your email',
+			);
 		}
 
 		const tokens = await this.getTokens(user.id, user.email, user.role);
@@ -76,7 +94,7 @@ export class AuthService {
 				message: 'Your email is verified successfully',
 			});
 		}
-		throw new ForbiddenException('Verification code is incorrect');
+		throw new ForbiddenException('Incorrect verification code');
 	}
 
 	async logout(userId: string) {
@@ -113,7 +131,19 @@ export class AuthService {
 		return tokens;
 	}
 
-	async updateRtHash(userId: string, rt: string) {
+	private async sendCode(email: string) {
+		try {
+			const code = generateCode();
+
+			await this.userService.updateVerificationCode(email, code);
+
+			await this.emailService.sendEmail(email, code);
+		} catch (error) {
+			throw error;
+		}
+	}
+
+	private async updateRtHash(userId: string, rt: string) {
 		const hash = await this.hashData(rt);
 		await this.prismaService.user.update({
 			where: {
@@ -125,7 +155,7 @@ export class AuthService {
 		});
 	}
 
-	async getTokens(
+	private async getTokens(
 		userId: string,
 		email: string,
 		role: Role,
@@ -157,7 +187,7 @@ export class AuthService {
 		};
 	}
 
-	async hashData(data: string) {
+	private async hashData(data: string) {
 		return await bcrypt.hash(data, 10);
 	}
 }
