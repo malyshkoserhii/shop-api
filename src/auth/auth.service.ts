@@ -10,7 +10,12 @@ import { JwtService } from '@nestjs/jwt';
 import { Response as ExpressResponse } from 'express';
 
 import { PrismaService } from '../prisma/prisma.service';
-import { AuthDto, VerifyEmailDto } from './dto';
+import {
+	AuthDto,
+	ForgotPasswordlDto,
+	SetNewPasswordlDto,
+	VerifyEmailDto,
+} from './dto';
 import { Tokens } from './types';
 import { UsersService } from 'src/users/users.service';
 import { EmailService } from 'src/email/email.service';
@@ -37,7 +42,6 @@ export class AuthService {
 			);
 		}
 
-		// create new user db record
 		await this.userService.create(dto, hash);
 
 		await this.sendCode(dto.email);
@@ -51,7 +55,6 @@ export class AuthService {
 		const user = await this.userService.findUserByEmail(dto.email);
 
 		if (!user) {
-			console.log('1');
 			throw new ForbiddenException('Incorrect email or password');
 		}
 
@@ -91,6 +94,66 @@ export class AuthService {
 			});
 		}
 		throw new ForbiddenException('Incorrect verification code');
+	}
+
+	async forgotPassword(body: ForgotPasswordlDto, response: ExpressResponse) {
+		const user = await this.userService.findUserByEmail(body.email);
+
+		if (!user) {
+			throw new ForbiddenException(
+				'User with this email is not registered',
+			);
+		}
+
+		const code = generateCode();
+
+		await this.userService.updateResetPwdCode(body.email, code);
+
+		await this.emailService.sendEmail(body.email, code);
+
+		return response.json({
+			message: 'Please check your email',
+		});
+	}
+
+	async verifyResetPassword(body: VerifyEmailDto, response: ExpressResponse) {
+		const user = await this.userService.findUserByEmail(body.email);
+
+		if (!user) {
+			throw new ForbiddenException('Incorrect email or password');
+		}
+
+		if (user.reset_pwd_code === body.code) {
+			await this.userService.updateResetPwdCode(body.email, null);
+
+			return response.json({
+				message: 'Please enter a new password',
+			});
+		}
+		throw new ForbiddenException('Incorrect verification code');
+	}
+
+	async setNewPassword(body: SetNewPasswordlDto, response: ExpressResponse) {
+		const hash = await this.hashData(body.password);
+
+		const user = await this.userService.findUserByEmail(body.email);
+
+		if (!user) {
+			throw new ForbiddenException('User not found');
+		}
+
+		await this.prismaService.user.update({
+			where: {
+				email: body.email,
+			},
+			data: {
+				hash,
+			},
+		});
+
+		return response.json({
+			message: 'Password updated successfully',
+		});
 	}
 
 	async logout(userId: string) {
@@ -174,7 +237,7 @@ export class AuthService {
 					email,
 					role,
 				},
-				{ secret: 'rt-secret', expiresIn: 60 * 60 * 24 * 7 }, // 7 days
+				{ secret: 'rt-secret', expiresIn: 60 * 60 * 24 * 365 }, // 365 days
 			),
 		]);
 		return {

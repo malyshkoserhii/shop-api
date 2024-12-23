@@ -25,6 +25,8 @@ model User {
   is_verified Boolean @default(false)
   code        Int?
 
+  reset_pwd_code Int?
+
   full_name        String?
   role             Role      @default(USER)
   shipping_address String?

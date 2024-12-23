@@ -45,6 +45,17 @@ export class UsersService {
 		});
 	}
 
+	async updateResetPwdCode(email: string, code: number | null) {
+		await this.prismaService.user.update({
+			where: {
+				email,
+			},
+			data: {
+				reset_pwd_code: code,
+			},
+		});
+	}
+
 	async updateVerificationStatus(email: string, status: boolean) {
 		await this.prismaService.user.update({
 			where: {

@@ -10,7 +10,12 @@ import {
 import { Response as ExpressResponse } from 'express';
 
 import { AuthService } from './auth.service';
-import { AuthDto, VerifyEmailDto } from './dto';
+import {
+	AuthDto,
+	ForgotPasswordlDto,
+	SetNewPasswordlDto,
+	VerifyEmailDto,
+} from './dto';
 import { Tokens } from './types';
 import { AtGuard, RtGuard } from '../common/guards';
 import { GetCurrentUserId } from '../common/decorators/get-current-user-id.decorator';
@@ -43,6 +48,36 @@ export class AuthController {
 		@Res() response: ExpressResponse,
 	) {
 		return this.authService.verifyEmail(body, response);
+	}
+
+	@Public()
+	@Post('reset-password')
+	@HttpCode(HttpStatus.OK)
+	forgotPaswrod(
+		@Body() body: ForgotPasswordlDto,
+		@Res() response: ExpressResponse,
+	) {
+		return this.authService.forgotPassword(body, response);
+	}
+
+	@Public()
+	@Post('verify-reset-password')
+	@HttpCode(HttpStatus.OK)
+	verifyResetPassword(
+		@Body() body: VerifyEmailDto,
+		@Res() response: ExpressResponse,
+	) {
+		return this.authService.verifyResetPassword(body, response);
+	}
+
+	@Public()
+	@Post('set-new-password')
+	@HttpCode(HttpStatus.OK)
+	setNewPassword(
+		@Body() body: SetNewPasswordlDto,
+		@Res() response: ExpressResponse,
+	) {
+		return this.authService.setNewPassword(body, response);
 	}
 
 	@UseGuards(AtGuard)
