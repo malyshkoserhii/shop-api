@@ -237,7 +237,7 @@ export class AuthService {
 					email,
 					role,
 				},
-				{ secret: 'rt-secret', expiresIn: 60 * 60 * 24 * 7 }, // 7 days
+				{ secret: 'rt-secret', expiresIn: 60 * 60 * 24 * 365 }, // 365 days
 			),
 		]);
 		return {
