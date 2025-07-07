@@ -44,21 +44,36 @@ export class ProductsService {
 		return updatedProduct;
 	}
 
-	async findAll(skip: string, take: string, sort: Prisma.SortOrder) {
+	async findAll(
+		skip: string,
+		take: string,
+		sort: Prisma.SortOrder,
+		search: string,
+	) {
 		try {
-			const paginationOptions = this.defaultPaginationOptions(
-				skip,
-				take,
-				sort,
-			);
-			const totalResults = await this.prismaService.product.count();
+			const productsInput = {
+				where: {
+					name: {
+						contains: search,
+						mode: 'insensitive',
+					},
+				},
+				orderBy: {
+					price: sort,
+				},
+			} satisfies Prisma.ProductFindFirstArgs;
+
+			const totalResults =
+				await this.prismaService.product.count(productsInput);
+
 			const products = await this.prismaService.product.findMany({
-				...paginationOptions,
+				...productsInput,
+				take: Number(take),
+				skip: Number(skip),
 			});
-			const totalPages = Math.ceil(totalResults / Number(take));
+
 			const response = {
 				data: products,
-				total_pages: totalPages,
 				total_results: totalResults,
 			};
 			return response;
@@ -86,20 +101,6 @@ export class ProductsService {
 		});
 		return {
 			message: 'Product removed successfully',
-		};
-	}
-
-	private defaultPaginationOptions(
-		skip: string,
-		take: string,
-		sort: Prisma.SortOrder,
-	): Prisma.ProductFindManyArgs {
-		return {
-			skip: Number(skip),
-			take: Number(take),
-			orderBy: {
-				price: sort,
-			},
 		};
 	}
 }

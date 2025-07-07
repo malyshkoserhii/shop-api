@@ -45,8 +45,9 @@ export class ProductsController {
 		@Query('skip') skip: string,
 		@Query('take') take: string,
 		@Query('sort') sort: Prisma.SortOrder,
+		@Query('search') search: string,
 	) {
-		return this.productsService.findAll(skip, take, sort);
+		return this.productsService.findAll(skip, take, sort, search);
 	}
 
 	@UseGuards(AtGuard)
